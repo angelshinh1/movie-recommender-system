@@ -1,26 +1,51 @@
 import streamlit as st
 import pickle
 import os
+import sys
+import pandas as pd
 
-# Get the directory of the current script
-script_dir = os.path.dirname(os.path.abspath(__file__))
+# Determine the base directory for the app
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Construct full paths to the pickle files
-movies_list_path = os.path.join(script_dir, "extracted_movies.pkl")
-similarity_path = os.path.join(script_dir, "similarity.pkl")
+MOVIES_LIST_PATH = os.path.join(BASE_DIR, "extracted_movies.pkl")
+SIMILARITY_PATH = os.path.join(BASE_DIR, "similarity.pkl")
 
-# Try to load pickle files with error handling
+
+def load_pickle_file(file_path):
+    """
+    Safely load a pickle file with comprehensive error handling
+    """
+    try:
+        with open(file_path, "rb") as f:
+            return pickle.load(f)
+    except Exception as e:
+        st.error(f"Error loading pickle file {file_path}: {e}")
+        st.error(f"Full file path: {os.path.abspath(file_path)}")
+        st.error(f"File exists: {os.path.exists(file_path)}")
+        st.error(f"Current working directory: {os.getcwd()}")
+        st.error(f"Base directory: {BASE_DIR}")
+        return None
+
+
+# Load pickle files
 try:
-    with open(movies_list_path, "rb") as f:
-        movies_list = pickle.load(f)
+    movies_list = load_pickle_file(MOVIES_LIST_PATH)
+    similarity = load_pickle_file(SIMILARITY_PATH)
 
-    with open(similarity_path, "rb") as f:
-        similarity = pickle.load(f)
-except FileNotFoundError as e:
-    st.error(f"Error loading data files: {e}")
-    st.error(f"Current script directory: {script_dir}")
-    st.error(f"Attempted to load from: {movies_list_path} and {similarity_path}")
-    st.stop()  # Stop the app from running further
+    # Validate loaded data
+    if movies_list is None or similarity is None:
+        st.error("Failed to load required data files.")
+        st.stop()
+
+    # Ensure movies_list is a DataFrame
+    if not isinstance(movies_list, pd.DataFrame):
+        st.error(f"Expected DataFrame, got {type(movies_list)}")
+        st.stop()
+
+except Exception as e:
+    st.error(f"Unexpected error during data loading: {e}")
+    st.stop()
 
 
 def recommend_movie(movie):
@@ -41,17 +66,15 @@ def recommend_movie(movie):
 
 st.title("My Movie Recommender App")
 
-# Check if movies_list is loaded before creating selectbox
-if "movies_list" in locals():
-    option = st.selectbox("Please select a movie", movies_list["title"].values)
+# Movie selection and recommendation
+option = st.selectbox("Please select a movie", movies_list["title"].values)
 
-    if st.button("Give suggestion"):
-        suggestions = recommend_movie(option)
-        for i in suggestions:
-            st.write(i)
-else:
-    st.error("Failed to load movie data. Please check the data files.")
+if st.button("Give suggestion"):
+    suggestions = recommend_movie(option)
+    for i in suggestions:
+        st.write(i)
 
+# Additional information section
 st.markdown(
     """
 <a href="https://github.com/angelshinh1/movie-recommender-system" target="_blank">
@@ -63,3 +86,13 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+
+# Debug information (optional, can be removed in production)
+with st.expander("Debug Information"):
+    st.write("### Pickle File Details")
+    st.write(f"Movies List Path: {MOVIES_LIST_PATH}")
+    st.write(f"Movies List Path Exists: {os.path.exists(MOVIES_LIST_PATH)}")
+    st.write(f"Similarity Path: {SIMILARITY_PATH}")
+    st.write(f"Similarity Path Exists: {os.path.exists(SIMILARITY_PATH)}")
+    st.write(f"Base Directory: {BASE_DIR}")
+    st.write(f"Current Working Directory: {os.getcwd()}")
