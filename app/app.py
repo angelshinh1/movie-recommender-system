@@ -29,3 +29,16 @@ if st.button('Give suggestion'):
     suggestions = recommend_movie(option)
     for i in suggestions:
         st.write(i)
+
+
+st.markdown(
+    """
+<a href="https://github.com/angelshinh1/movie-recommender-system" target="_blank">
+    <img src="https://img.shields.io/badge/GitHub-Repo-blue?logo=github" alt="GitHub Repo">
+</a>
+<a href="https://github.com/angelshinh1" target="_blank">
+    <img src="https://img.shields.io/badge/Follow--me-black?style=social&logo=github" alt="Follow Me">
+</a>
+""",
+    unsafe_allow_html=True,
+)
